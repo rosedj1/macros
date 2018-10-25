@@ -1,10 +1,10 @@
 import numpy as np
                                        
-## Make sure that: 0 <= deltaPhi <= pi 
+## Make sure that: -Pi <= deltaPhi <= Pi 
 def dPhiCalc(phi1, phi2):              
-    dPhi = abs(phi1-phi2)            
-    while result > np.pi:              
-        dPhi = 2*np.pi - dPhi      
+    dPhi = phi1 - phi2            
+    while dPhi > np.pi:     dPhi -= 2*np.pi
+    while dPhi < -np.pi:    dPhi += 2*np.pi
     return dPhi
 
 def dRCalc(eta1, phi1, eta2, phi2):                

@@ -2,53 +2,46 @@ import numpy as np
 import root_numpy
 
 ##### PURPOSE #####
-## Convert any kinematic variable branch from a processed LHE file 
-## (cmsgrid_final.lhesyntax2.root) into a numpy array for easy processing. 
+## Convert any kinematic variable branch from a miniAOD file into a numpy array for easy processing. 
 ## Return the array. 
 ###################
 
 ## inputTree = str tree name from ROOT file
 ## kinemVar = str name of ROOT branch
 ## numEvents = -1 for all events in branch
-## Possible kinemVar names in LHE file:
-    #weight
-    #id[3-6]
-    #eta[3-6]
-    #pt[3-6]
-    #pto[1-4]
+## Possible kinemVar names in miniAOD file (THERE ARE MANY!!!):
+    #lep_id <vector>
+    #lep_pt <vector>
+    #lep_eta <vector>
+    #lep_phi <vector>
+    #lep_mass <vector>
+    #lep_RelIso
+    #GENlep_RelIso <vector>
+    #pTL1, pTL2, pTL3, pTL4
+    #idL1 - 4
+    #etaL1 - 4
+    #H_mass
     #mass4l
+    #mass4mu
+    #mass4e
+    #mass2e2mu
     #pT4l
-    #eta4l
-    #rapidity4l
-    #massZ1
-    #massZ2
-    #costheta1
-    #costheta2
-    #costhetastar
-    #phi
-    #phi1
+    #massZ1, massZ2
+    #minDeltR
+    #passedFiducialSelection
 
-def lheToArray(inputFile,inputTree,kinemVar,numEvents,showInfo=False):
+def rootToArray(inputFile,inputTree,kinemVar,numEvents,showInfo=False):
     
     ## Turn ROOT TTree branch into numpy array
     ## Combine arrays such that each row is a single event
-    if kinemVar == "id":
-        brancharray1  = root_numpy.root2array(inputFile, inputTree, "id3")
-        brancharray2  = root_numpy.root2array(inputFile, inputTree, "id4")
-        brancharray3  = root_numpy.root2array(inputFile, inputTree, "id5")
-        brancharray4  = root_numpy.root2array(inputFile, inputTree, "id6")
-        brancharray = np.vstack((brancharray1, brancharray2, brancharray3, brancharray4)).T
+    if kinemVar == "lep_eta":
+        brancharray   = root_numpy.root2array(inputFile, inputTree, "lep_eta")
+        #brancharray = np.vstack((brancharray1, brancharray2, brancharray3, brancharray4)).T
     elif kinemVar == "eta":
         brancharray1  = root_numpy.root2array(inputFile, inputTree, "eta3")
         brancharray2  = root_numpy.root2array(inputFile, inputTree, "eta4")
         brancharray3  = root_numpy.root2array(inputFile, inputTree, "eta5")
         brancharray4  = root_numpy.root2array(inputFile, inputTree, "eta6")
-        brancharray = np.vstack((brancharray1, brancharray2, brancharray3, brancharray4)).T
-    elif kinemVar == "phi":
-        brancharray1  = root_numpy.root2array(inputFile, inputTree, "phi3")
-        brancharray2  = root_numpy.root2array(inputFile, inputTree, "phi4")
-        brancharray3  = root_numpy.root2array(inputFile, inputTree, "phi5")
-        brancharray4  = root_numpy.root2array(inputFile, inputTree, "phi6")
         brancharray = np.vstack((brancharray1, brancharray2, brancharray3, brancharray4)).T
     elif kinemVar == "pt":
         brancharray1  = root_numpy.root2array(inputFile, inputTree, "pt3")
@@ -63,7 +56,7 @@ def lheToArray(inputFile,inputTree,kinemVar,numEvents,showInfo=False):
         brancharray4  = root_numpy.root2array(inputFile, inputTree, "pto4")
         brancharray = np.vstack((brancharray1, brancharray2, brancharray3, brancharray4)).T
     else: 
-    ## Then kinemVar has only one kind of its branch in ROOT tree
+    ## Then kinemVar has only one kind of branch in ROOT tree
         brancharray = root_numpy.root2array(inputFile, inputTree, kinemVar)
         brancharray = brancharray.reshape(len(brancharray),1)
 

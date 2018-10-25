@@ -27,5 +27,3 @@ def lookAtBranch(inputFile, inputTree, kinemVar, numEvents):
     
     print "Total number of events looped over:", counter
     print "Num events called for:", numEvents
-        
-

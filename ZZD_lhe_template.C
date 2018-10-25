@@ -28,16 +28,34 @@ const int LEPSIZE = 4;
 const double PI = 3.1415926;
 const double mZ_PDG = 91.188;//GeV
 
-void ZZD_lhe(TString pohegLheFile = "cmsgrid_final_eps1e-2_MZD10_lhaid306000.lhe", long int Nevents = 9000, bool bApplyCuts = false, unsigned int kDebugLevel = 1) {
+void ZZD_lhe(TString powhegLheFile = "ggHZZd4l_MZdZDMASS.lhe", long int Nevents = 2000, bool bApplyCuts = true, unsigned int kDebugLevel = 1) {
 // define input
     ifstream in;
-    in.open(pohegLheFile.Data(),ios::in);
+    in.open(powhegLheFile.Data(),ios::in);
 
     // define output
     string strtemp;
-    strtemp.assign(pohegLheFile.Data());
-    strtemp.append("nocuts");
-    strtemp.append(".root");
+    // These are turned into real ints using sed from a different script
+    // Feel free to replace these with values you want.
+    // They are only used for naming purposes.
+    //int zdmass = 1;
+    //int lhaid = LHAID;
+
+    strtemp.assign(powhegLheFile.Data());
+    //strtemp.append("MZd");
+    //strtemp.append(std::to_string(zdmass));
+    strtemp.append("_");
+    strtemp.append(std::to_string(Nevents));
+    strtemp.append("events_");
+    //strtemp.append("lhaid");
+    //strtemp.append(std::to_string(lhaid));
+    if (bApplyCuts == true) {
+        strtemp.append("WITH"); 
+    }
+    else {
+        strtemp.append("WITHOUT");
+    }
+    strtemp.append("cuts.root");
     std::cout<<" preparing root file: "<<strtemp.c_str()<<" \n";
     std::cout<<" running for: "<<Nevents<<" events.\n";
 
