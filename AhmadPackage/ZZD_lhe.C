@@ -28,14 +28,14 @@ const int LEPSIZE = 4;
 const double PI = 3.1415926;
 const double mZ_PDG = 91.188;//GeV
 
-void ZZD_lhe(TString pohegLheFile = "cmsgrid_final_eps1e-2_MZD10_lhaid306000.lhe", long int Nevents = 9000, bool bApplyCuts = false, unsigned int kDebugLevel = 1) {
+void ZZD_lhe(TString powhegLHEFile = "cmsgrid_final_eps1e-2_MZD10_lhaid306000.lhe", long int Nevents = 9000, bool bApplyCuts = false, unsigned int kDebugLevel = 1) {
 // define input
     ifstream in;
-    in.open(pohegLheFile.Data(),ios::in);
+    in.open(powhegLHEFile.Data(),ios::in);
 
     // define output
     string strtemp;
-    strtemp.assign(pohegLheFile.Data());
+    strtemp.assign(powhegLHEFile.Data());
     strtemp.append("nocuts");
     strtemp.append(".root");
     std::cout<<" preparing root file: "<<strtemp.c_str()<<" \n";
