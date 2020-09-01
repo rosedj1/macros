@@ -1,0 +1,419 @@
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <cstdlib>
+#include <stdio.h>
+#include <map>
+#include <utility>
+#include <iterator>
+
+#include "TROOT.h"
+#include "TFile.h"
+#include "TString.h"
+#include "TH1.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include "TF1.h"
+#include "TLegend.h"
+#include "TMultiGraph.h"
+#include "THStack.h"
+#include "TCanvas.h"
+#include "TPad.h"
+#include "TMath.h"
+#include "TTree.h"
+#include "TTreeIndex.h"
+#include "TH2F.h"
+#include "TLatex.h"
+#include "TLine.h"
+#include "TGraphAsymmErrors.h"
+#include "Math/QuantFuncMathCore.h"
+
+#include "TSystem.h"
+#include "TStyle.h"
+#include "TPaveText.h"
+
+#include "TPaveLabel.h"
+#include "TLegend.h"
+
+#include "TLorentzRotation.h"
+#include "TVector3.h"
+#include "TLorentzVector.h"
+//
+#include <vector>
+#include <fstream>
+//
+#include "TRandom3.h"
+  
+#include "RooRealVar.h"
+#include "RooArgSet.h"
+#include "RooGaussian.h"
+#include "RooBreitWigner.h"
+#include "RooProdPdf.h"
+#include "RooDataSet.h"
+#include "RooGlobalFunc.h"
+#include "RooDataHist.h"
+#include "RooHistPdf.h"
+#include "RooCBShape.h"
+#include "RooMinuit.h"
+#include "RooFormulaVar.h"
+#include "RooAddPdf.h"
+#include "RooGenericPdf.h"
+
+#include "RooPlot.h"
+
+using namespace std;
+
+void MioSkim(){
+
+//   std::vector<float>* Z_mass; 
+//   std::vector<float>* Z_noFSR_mass;
+//   std::vector<float>* Z_massErr;
+// 
+//   std::string *triggersPassed;
+  ULong64_t Run, LumiSect, Event;
+// 
+  std::vector<int> *lep_id = 0;
+  std::vector<int> *lep_Sip = 0;
+  std::vector<int> *lep_tightId = 0;
+  std::vector<float>* lep_mass = 0;
+  std::vector<float> *lep_pt = 0;
+  std::vector<float> *lep_ptErrDiff = 0;
+  std::vector<float> *lepFSR_pt = 0; 
+  std::vector<float> *lep_eta = 0;
+  std::vector<float> *lep_phi = 0;
+  std::vector<int> *lep_genindex = 0;
+  std::vector<float> *lep_RelIso = 0;
+  std::vector<float> *lep_pterr = 0;
+  std::vector<float> *lep_pterrold = 0;
+  std::vector<int> *lep_ecalDriven = 0;
+
+  std::vector<float>  *lep_dataMC = 0;
+  std::vector<float>  *GENZ_mass = 0;
+  std::vector<float>  *GENlep_pt = 0;
+  std::vector<float>  *GENlep_eta = 0;
+  std::vector<float>  *GENlep_phi = 0;
+  std::vector<float>  *GENlep_mass = 0;
+
+
+  double massZ, massZErr, massZErrOld, pT1, pT2, eta1, eta2;
+  double ptErr1_noS, ptErr2_noS;
+  double Iso1, Iso2;
+  int Id1, Id2;
+  int Tight1, Tight2;
+  double m1,m2, phi1,phi2;
+  double pterr1, pterr2;
+  double pterr1old, pterr2old;  
+  double genzm, GENmass2l;
+  double weight;
+  double genLep_pt1=-999, genLep_pt2=-999;
+  double genLep_eta1=-999, genLep_eta2=-999;
+  double genLep_phi1=-999, genLep_phi2=-999;
+  int lep1_ecalDriven = -1, lep2_ecalDriven = -1;
+  int nFSRPhotons;
+  double Met;
+  float_t met;
+  bool passedTrig;
+  bool passedFullSelection; 
+
+   //TString filename = "EGamma_RunD";
+   //TString filename = "SingleMuon_RunB";
+  
+   //TString reconstruction = "madgraph";
+  //TString reconstruction = "amcatnlo";
+  //TString reconstruction = "skimmed";
+   
+  TString indir = "/raid/raid8/ferrico/HZZ4l_Run2_d0/CMSSW_10_2_15/src/";
+  //TString indir = "root://cmsio5.rc.ufl.edu//store/user/t2/users/ferrico/Full_RunII/";// + reconstruction + "/2018/Electron/";
+  TString outdir = "./";//Full_RunII/" + reconstruction + "/2018/";
+  
+  //TString fs = "2mu";
+  TString fs = "2e";
+
+
+   TString filename = "DUMMYFILENAME_newSC_FullRunII";//Electron_2017_amcatnlo_rochester";//DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIIAutumn18MiniAOD-102X_upgrade2018";
+//   TString indir = "/raid/raid7/rosedj1/ForPeeps/ForFilippo/";
+//   TString outdir = "./output/DY_2018/";
+
+  if(fs!="2e" && fs!="2mu")
+  cout<<"fs has to be 2e, or 2mu"<<endl;
+
+  /////////////////////
+
+  cout<<"---- fs is "<<fs<<endl;
+
+  cout<<"---- read file"<<endl;
+
+  std::cout<<indir<<filename<<".root"<<std::endl;
+
+  TFile* infile = TFile::Open(indir+filename+".root");
+//  TFile* infile = new TFile("inputRootBeforeSkim/" + filename+".root");
+//  TFile* infile = new TFile("/cms/data/store/user/t2/users/dsperka/Run2/HZZ4l/SubmitArea_13TeV/rootfiles_Run1Fid_20160222/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1.root");
+
+
+  TTree* tree; 
+  if(infile){ 
+  	std::cout<<"File trovato.OK"<<std::endl;
+    infile->cd("Ana");
+    tree = (TTree*)gDirectory->Get("passedEvents");
+    //infile->Get("Ana/passedEvents", tree);
+  }
+  else std::cout<<"ERROR could not find the file"<<std::endl;
+
+  if(!tree) { cout<<"ERROR could not find the tree for "<<filename<<endl; return -1;}
+
+  // read tree    
+//   TString name = filename+_m"+fs;
+  //TString name = "DYJetsToLL_M-50_Full_RunII_" + reconstruction + "_m"+fs+"_" + filename;
+  TString name = "cancella";//DYJetsToLL_M-50_Full_RunII_amcatnlo_2017_ElecNoScale";//Electron_2017_amcatnlo_rochester";//DYJetsToLL_M-10to50_2016_"+fs;//Data_m"+fs+"_RunD";
+  TFile* tmpFile =  new TFile(outdir + name+".root","RECREATE");
+
+  TTree* newtree = new TTree("passedEvents","passedEvents");
+
+  cout<<"start setting tree "<<endl;
+
+  newtree->Branch("massZ",&massZ,"massZ/D");
+  newtree->Branch("massZErr",&massZErr,"massZErr/D");
+  newtree->Branch("massZErrOld",&massZErrOld,"massZErrOld/D");
+
+  newtree->Branch("pT1",&pT1,"pT1/D");
+  newtree->Branch("pT2",&pT2,"pT2/D");
+  newtree->Branch("ptErr1_noS",&ptErr1_noS,"ptErr1_noS/D");
+  newtree->Branch("ptErr2_noS",&ptErr2_noS,"ptErr2_noS/D");
+  newtree->Branch("eta1",&eta1,"eta1/D");
+  newtree->Branch("eta2",&eta2,"eta2/D");
+  newtree->Branch("phi1",&phi1,"phi1/D");
+  newtree->Branch("phi2",&phi2,"phi2/D");
+  newtree->Branch("m1",&m1,"m1/D");
+  newtree->Branch("m2",&m2,"m2/D");
+
+  newtree->Branch("Iso1",&Iso1,"Iso1/D");
+  newtree->Branch("Iso2",&Iso2,"Iso2/D");
+  newtree->Branch("Id1",&Id1,"Id1/I");
+  newtree->Branch("Id2",&Id2,"Id2/I");
+  newtree->Branch("Tight1",&Tight1,"Tight1/I");
+  newtree->Branch("Tight2",&Tight2,"Tight2/I");
+
+  newtree->Branch("pterr1",&pterr1,"pterr1/D");
+  newtree->Branch("pterr2",&pterr2,"pterr2/D");
+  newtree->Branch("pterr1old",&pterr1old,"pterr1old/D");
+  newtree->Branch("pterr2old",&pterr2old,"pterr2old/D");
+  newtree->Branch("Met", &Met, "Met/D");
+  newtree->Branch("weight",&weight,"weight/D");
+  newtree->Branch("genzm",&genzm,"genzm/D");
+  newtree->Branch("GENmass2l",&GENmass2l,"GENmass2l/D");
+  newtree->Branch("genLep_pt1", &genLep_pt1, "genLep_pt1/D");
+  newtree->Branch("genLep_pt2", &genLep_pt2, "genLep_pt2/D");
+  newtree->Branch("genLep_eta1", &genLep_eta1, "genLep_eta1/D");
+  newtree->Branch("genLep_eta2", &genLep_eta2, "genLep_eta2/D");
+  newtree->Branch("genLep_phi1", &genLep_phi1, "genLep_phi1/D");
+  newtree->Branch("genLep_phi2", &genLep_phi2, "genLep_phi2/D");
+
+  newtree->Branch("nFSRPhotons", &nFSRPhotons, "nFSRPhotons/I");
+  newtree->Branch("lep1_ecalDriven", &lep1_ecalDriven, "lep1_ecalDriven/I");
+  newtree->Branch("lep2_ecalDriven", &lep2_ecalDriven, "lep2_ecalDriven/I");
+
+  cout<<"start reading tree "<<endl;
+        Long64_t nentries = tree->GetEntries();
+// 
+        tree->SetBranchStatus("*",0);//1);                       
+        tree->SetBranchStatus("passedFullSelection",1);     
+        tree->SetBranchStatus("passedTrig",1);              
+        tree->SetBranchStatus("triggersPassed",1);          
+        tree->SetBranchStatus("lep_id",1);  
+        tree->SetBranchStatus("lep_ptErrDiff",1);        
+        tree->SetBranchStatus("lep_tightId",1);             
+        tree->SetBranchStatus("lep_pt",1);                  
+        tree->SetBranchStatus("lepFSR_pt",1);               
+        tree->SetBranchStatus("lep_eta",1);                 
+        tree->SetBranchStatus("lep_phi",1);                 
+        tree->SetBranchStatus("lep_mass",1);                
+        tree->SetBranchStatus("lep_RelIso",1);              
+        tree->SetBranchStatus("lep_pterr",1);               
+        tree->SetBranchStatus("lep_pterrold",1);            
+        tree->SetBranchStatus("lep_Sip",1);                 
+        tree->SetBranchStatus("lep_dataMC",1);              
+        tree->SetBranchStatus("lep_genindex",1);            
+        tree->SetBranchStatus("lep_ecalDriven", 1);
+        tree->SetBranchStatus("Run",1);                           
+        tree->SetBranchStatus("LumiSect",1);                      
+        tree->SetBranchStatus("Event",1);                         
+        tree->SetBranchStatus("met",1);                           
+        tree->SetBranchStatus("GENZ_mass",1);                     
+        tree->SetBranchStatus("GENlep_pt",1);                     
+        tree->SetBranchStatus("GENlep_eta",1);                    
+        tree->SetBranchStatus("GENlep_phi",1);                    
+        tree->SetBranchStatus("GENlep_mass",1);                   
+        tree->SetBranchStatus("nFSRPhotons",1);                   
+
+
+        tree->SetBranchAddress("passedFullSelection",&passedFullSelection);
+        tree->SetBranchAddress("passedTrig",&passedTrig);   
+        tree->SetBranchAddress("lep_tightId", &lep_tightId); 
+        tree->SetBranchAddress("lep_ptErrDiff",&lep_ptErrDiff);     
+        tree->SetBranchAddress("lep_id", &lep_id);                
+        tree->SetBranchAddress("lep_pt", &lep_pt);                 
+        tree->SetBranchAddress("lepFSR_pt",&lepFSR_pt);           
+        tree->SetBranchAddress("lep_eta",&lep_eta);               
+        tree->SetBranchAddress("lep_phi",&lep_phi);               
+        tree->SetBranchAddress("lep_mass",&lep_mass);             
+        tree->SetBranchAddress("lep_RelIso",&lep_RelIso);         
+        tree->SetBranchAddress("lep_pterr",&lep_pterr);           
+        tree->SetBranchAddress("lep_pterrold",&lep_pterrold);     
+        tree->SetBranchAddress("lep_Sip", &lep_Sip);              
+        tree->SetBranchAddress("lep_dataMC", &lep_dataMC);        
+        tree->SetBranchAddress("lep_genindex", &lep_genindex);    
+        tree->SetBranchAddress("lep_ecalDriven", &lep_ecalDriven);  
+        tree->SetBranchAddress("Run",&Run);                       
+        tree->SetBranchAddress("LumiSect",&LumiSect);             
+        tree->SetBranchAddress("Event",&Event);                   
+        tree->SetBranchAddress("met", &met);                      
+        tree->SetBranchAddress("GENZ_mass", &GENZ_mass);                                                                                 
+        tree->SetBranchAddress("GENlep_pt", &GENlep_pt);          
+        tree->SetBranchAddress("GENlep_eta", &GENlep_eta);        
+        tree->SetBranchAddress("GENlep_phi", &GENlep_phi);        
+        tree->SetBranchAddress("GENlep_mass", &GENlep_mass);          
+        tree->SetBranchAddress("nFSRPhotons", &nFSRPhotons);      
+
+//         tree->Draw("lep_ecalDriven");
+//         return;
+
+        std::cout<<"after tree set\t"<<tree->GetEntries()<<std::endl;
+  
+      for(int mcfmEvt_HZZ=0; mcfmEvt_HZZ < nentries; mcfmEvt_HZZ++) { 
+   
+      //for(int mcfmEvt_HZZ=90000000; mcfmEvt_HZZ < nentries; mcfmEvt_HZZ++) { //event loop     
+     //  for(int mcfmEvt_HZZ=60000000; mcfmEvt_HZZ < 90000000; mcfmEvt_HZZ++) { //event loop
+      //   for(int mcfmEvt_HZZ=30000000; mcfmEvt_HZZ < 60000000; mcfmEvt_HZZ++) { //event loop
+     //for(int mcfmEvt_HZZ=0; mcfmEvt_HZZ < 30000000; mcfmEvt_HZZ++) { //event loop
+
+            tree->GetEntry(mcfmEvt_HZZ);
+            if(mcfmEvt_HZZ % 1000000 == 0)
+            std::cout<<mcfmEvt_HZZ<<" --- Dentro il tree --- "<<std::endl;
+
+//          if(!passedTrig) continue;
+            if((*lep_id).size()<2) continue;
+            vector<int> passLepIndex;
+            for(unsigned int il=0; il<(*lep_pt).size(); il++){
+                 if(!(*lep_tightId)[il]) continue; 
+//                  if(!((*lep_RelIso)[il]>0.35)) continue;
+//                  if(!(*lep_RelIso)[il]>0.35) continue; 
+                 if((*lep_RelIso)[il] > 0.35) continue; 
+                 passLepIndex.push_back(il);
+//                  if((*lep_RelIso)[il]> 0.3 && (*lep_RelIso)[il] < 0.4) std::cout<<(*lep_RelIso)[il]<<std::endl;
+
+            }
+            if(passLepIndex.size()!=2) continue;
+
+            unsigned int L1 = passLepIndex[0]; unsigned int L2 = passLepIndex[1];
+            int idL1 = (*lep_id)[L1]; int idL2 = (*lep_id)[L2];
+            if((idL1+idL2)!=0) continue;
+            if(fs=="2e" && abs(idL1)!=11) continue;
+            if(fs=="2mu" && abs(idL1)!=13) continue;
+
+            weight = (*lep_dataMC)[L1]*(*lep_dataMC)[L2];
+
+            TLorentzVector lep1(0,0,0,0);
+            TLorentzVector lep2(0,0,0,0);
+
+            eta1 = (*lep_eta)[L1]; eta2 = (*lep_eta)[L2];
+
+            ptErr1_noS = (*lep_ptErrDiff)[L1]; ptErr2_noS = (*lep_ptErrDiff)[L2];
+			/*
+            if (abs(idL1) == 13 && abs(idL2) == 13) {
+
+               if (abs(eta1) < 0.9) (*lep_pt)[L1] = (*lep_pt)[L1]/(1-0.00070374);
+               if (abs(eta1) > 0.9 && abs(eta1) < 1.8) (*lep_pt)[L1] = (*lep_pt)[L1]/(1-0.0015881);
+               if (abs(eta1) > 1.8 && abs(eta1) < 2.4) (*lep_pt)[L1] = (*lep_pt)[L1]/(1-0.0029359);
+ 
+               if (abs(eta2) < 0.9) (*lep_pt)[L2] = (*lep_pt)[L2]/(1-0.00070374);
+               if (abs(eta2) > 0.9 && abs(eta2) < 1.8) (*lep_pt)[L2] = (*lep_pt)[L2]/(1-0.0015881);
+               if (abs(eta2) > 1.8 && abs(eta2) < 2.4) (*lep_pt)[L2] = (*lep_pt)[L2]/(1-0.0029359);
+
+               }
+			*/
+
+            phi1 = double((*lep_phi)[L1]); m1 = double((*lep_mass)[L1]);
+            phi2 = double((*lep_phi)[L2]); m2 = double((*lep_mass)[L2]);
+            pT1 = (*lepFSR_pt)[L1]; pT2 = (*lepFSR_pt)[L2];
+//            pT1 = (*lep_pt)[L1]; pT2 = (*lep_pt)[L2];
+            Iso1 = (*lep_RelIso)[L1]; Iso2 = (*lep_RelIso)[L2];
+            Id1 = (*lep_id)[L1]; Id2 = (*lep_id)[L2];
+            Tight1 = (*lep_tightId)[L1]; Tight2 = (*lep_tightId)[L2];
+
+            lep1.SetPtEtaPhiM(double((*lepFSR_pt)[L1]),double((*lep_eta)[L1]),double((*lep_phi)[L1]),double((*lep_mass)[L1]));
+            lep2.SetPtEtaPhiM(double((*lepFSR_pt)[L2]),double((*lep_eta)[L2]),double((*lep_phi)[L2]),double((*lep_mass)[L2]));
+//            lep1.SetPtEtaPhiM(double((*lep_pt)[L1]),double((*lep_eta)[L1]),double((*lep_phi)[L1]),double((*lep_mass)[L1]));
+//            lep2.SetPtEtaPhiM(double((*lep_pt)[L2]),double((*lep_eta)[L2]),double((*lep_phi)[L2]),double((*lep_mass)[L2]));
+
+            massZ = (lep1+lep2).M();
+            pterr1 = double((*lep_pterr)[L1]); pterr2 = double((*lep_pterr)[L2]);
+            pterr1old = double((*lep_pterrold)[L1]); pterr2old = double((*lep_pterrold)[L2]);
+
+//            if(massZ<80 || massZ>100) continue;
+
+            TLorentzVector lep1p, lep2p;
+//            lep1p.SetPtEtaPhiM(double((*lep_pt)[L1]+pterr1),double((*lep_eta)[L1]),double((*lep_phi)[L1]),double((*lep_mass)[L1]));
+//            lep2p.SetPtEtaPhiM(double((*lep_pt)[L2]+pterr2),double((*lep_eta)[L2]),double((*lep_phi)[L2]),double((*lep_mass)[L2]));
+            lep1p.SetPtEtaPhiM(double((*lepFSR_pt)[L1]+pterr1),double((*lep_eta)[L1]),double((*lep_phi)[L1]),double((*lep_mass)[L1]));
+            lep2p.SetPtEtaPhiM(double((*lepFSR_pt)[L2]+pterr2),double((*lep_eta)[L2]),double((*lep_phi)[L2]),double((*lep_mass)[L2]));
+
+            double dm1 = (lep1p+lep2).M()-(lep1+lep2).M();
+            double dm2 = (lep1+lep2p).M()-(lep1+lep2).M();
+
+            double dm11 = dm1;
+            double dm22 = dm2;
+ 
+            massZErr = TMath::Sqrt(dm1*dm1+dm2*dm2);
+
+            lep1p.SetPtEtaPhiM(double((*lepFSR_pt)[L1]+pterr1old),double((*lep_eta)[L1]),double((*lep_phi)[L1]),double((*lep_mass)[L1]));
+            lep2p.SetPtEtaPhiM(double((*lepFSR_pt)[L2]+pterr2old),double((*lep_eta)[L2]),double((*lep_phi)[L2]),double((*lep_mass)[L2]));
+//            lep1p.SetPtEtaPhiM(double((*lep_pt)[L1]+pterr1old),double((*lep_eta)[L1]),double((*lep_phi)[L1]),double((*lep_mass)[L1]));
+//            lep2p.SetPtEtaPhiM(double((*lep_pt)[L2]+pterr2old),double((*lep_eta)[L2]),double((*lep_phi)[L2]),double((*lep_mass)[L2]));
+
+            dm1 = (lep1p+lep2).M()-(lep1+lep2).M();
+            dm2 = (lep1+lep2p).M()-(lep1+lep2).M();
+
+            massZErrOld = TMath::Sqrt(dm1*dm1+dm2*dm2);
+            Met = met; 
+
+            genzm=0; GENmass2l=0;
+            if(GENZ_mass->size()>0) genzm = (*GENZ_mass)[0];
+
+            TLorentzVector GENlep1p, GENlep2p;
+            
+            if((*lep_genindex)[L1] >= 0 && (*lep_genindex)[L2] >= 0) {
+
+              genLep_pt1=(*GENlep_pt)[(*lep_genindex)[L1]]; genLep_pt2=(*GENlep_pt)[(*lep_genindex)[L2]];
+              genLep_eta1=(*GENlep_eta)[(*lep_genindex)[L1]]; genLep_eta2=(*GENlep_eta)[(*lep_genindex)[L2]];
+              genLep_phi1=(*GENlep_phi)[(*lep_genindex)[L1]]; genLep_phi2=(*GENlep_phi)[(*lep_genindex)[L2]];
+
+              int genindex1 = (*lep_genindex)[L1];
+              int genindex2 = (*lep_genindex)[L2];
+
+              GENlep1p.SetPtEtaPhiM(double((*GENlep_pt)[genindex1]),double((*GENlep_eta)[genindex1]),double((*GENlep_phi)[genindex1]),double((*GENlep_mass)[genindex1]));
+              GENlep2p.SetPtEtaPhiM(double((*GENlep_pt)[genindex2]),double((*GENlep_eta)[genindex2]),double((*GENlep_phi)[genindex2]),double((*GENlep_mass)[genindex2]));
+              GENmass2l = (GENlep1p+GENlep2p).M();
+
+              }
+
+            if (lep_ecalDriven->size() > 0) {
+
+               lep1_ecalDriven = (*lep_ecalDriven)[L1];
+               lep2_ecalDriven = (*lep_ecalDriven)[L2];
+ 
+               }
+
+            newtree->Fill();
+
+        }
+
+                                                            
+     cout<<"end reading tree"<<endl;                       
+                                                               
+     tmpFile->cd();                                        
+                                                                  
+     newtree->Write("passedEvents",TObject::kOverwrite);   
+                                                                     
+     tmpFile->Write();                                     
+     tmpFile->Close();   
+}
